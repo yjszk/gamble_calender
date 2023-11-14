@@ -1,0 +1,58 @@
+name: gamble cal delete
+on:
+  workflow_dispatch:
+    inputs:
+      delete-date:
+        description: "削除開始日YYYYMMDD"
+        required: true
+      shubetu:
+        description: "削除対象"
+        required: true
+
+jobs:
+  gamble:
+    name: gamble cal delete
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: "pip" # caching pip dependencies
+
+      - name: create key dir
+        run: mkdir -p ./key/
+
+      - name: Translate secrets of base64 into key json
+        env:
+          JSON_DECODE: ${{ secrets.calkey }}
+
+        run: |
+          echo -n $JSON_DECODE | base64 --decode > ./key.json
+
+      - name: Translate secrets of base64 into setting.ini
+        env:
+          JSON_DECODE_INI: ${{ secrets.calsetting }}
+
+        run: |
+          echo -n $JSON_DECODE_INI | base64 --decode > ./setting.ini
+
+      - name: pip install
+        run: pip install -r requirements.txt
+
+      - name: gamble_cal_delete
+        id: gamble_cal_delete
+        run: |
+          python deleteUtil.py ${{ inputs.shubetu }} ${{ inputs.delete-date }}

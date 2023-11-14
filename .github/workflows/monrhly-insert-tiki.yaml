@@ -1,0 +1,91 @@
+name: tiki_insert
+on:
+  workflow_dispatch:
+
+jobs:
+  gamble:
+    name: tiki_insert
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: "pip" # caching pip dependencies
+
+      - name: create key dir
+        run: mkdir -p ./key/
+
+      - name: Translate secrets of base64 into key json
+        env:
+          JSON_DECODE: ${{ secrets.calkey }}
+
+        run: |
+          echo -n $JSON_DECODE | base64 --decode > ./key/key.json
+
+      - name: Translate secrets of base64 into setting.ini
+        env:
+          JSON_DECODE_INI: ${{ secrets.calsetting }}
+
+        run: |
+          echo -n $JSON_DECODE_INI | base64 --decode > ./setting.ini
+
+      - name: key validate
+        run: ls -lth ./key
+
+      - name: pip install
+        run: pip install -r requirements.txt
+
+      - name: gamble_cal_insert
+        id: gamble_cal_insert
+        run: |
+          # 取得
+          items=(
+              keiba
+              keirin
+              kyotei
+              autorace
+              keiba_jra
+              )
+
+          for item in ${items[@]}; do
+              echo $tiki $item
+              python getJson.py `date '+%-m' -d "1 months"` `date "+%Y"` $item
+          done
+
+          # 確認
+          ls -lth
+
+          # 挿入
+          year=`date '+%-Y' -d "1 months"`
+          mouth=`date '+%-m' -d "1 months"`
+          tikis=(
+              kanto
+              tokai
+              hokuriku
+              kinki
+              tyugoku
+              kyushu
+              sikoku
+              hokkaido
+              tohoku
+              )
+
+          for tiki in ${tikis[@]}; do
+              for item in ${items[@]}; do
+                  echo $tiki $item
+                  python tikibetuCalInsert.py $year $mouth $item $tiki
+              done
+          done

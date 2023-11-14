@@ -1,0 +1,6 @@
+bs4==0.0.1
+geocoder==1.38.1
+google-api-python-client==2.66.0
+google-auth==2.14.1
+google-auth-httplib2==0.1.0
+python-dateutil==2.8.2
